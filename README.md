@@ -12,18 +12,18 @@ struct Point { x: i32, y: i32 }
 
 let p1 = Point { x: 1, y: 2 }
 let p2 = Point { x: 1, y: 2 }
-p1 == p2 // true, without writing code for equality;
+p1 == p2 // true, without writing code for equality
 
 struct Circle { c: Point, r: i32 }
 let c1 = Circle { c: p1, r: 1 }
 let c2 = Circle { c: p1, r: 1 }
 
-c1 == c2 // invalid! don't know how to compare then...
+c1 == c2 // invalid! don't know how to compare them
 ```
 
 ## Variables
 
-1. Even though every variable is **immutable** by default, you can redeclare the same binding. This implies shadowing the previous declaration of.
+1. Even though every variable is **immutable** by default, you can redeclare the same binding. This implies shadowing the previous declarations.
 
 ```rust
 let mut a = 1;

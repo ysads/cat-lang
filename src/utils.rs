@@ -1,13 +1,21 @@
-pub(crate) fn extract_digits (s: &str) -> (&str, &str) {
+fn take_while (pred: impl Fn(char) -> bool, s: &str) -> (&str, &str) {
     let last_index = s
-    .char_indices()
-    .find_map(|(idx, c)| if c.is_ascii_digit() { None } else { Some(idx) })
-    .unwrap_or_else(|| s.len());
+        .char_indices()
+        .find_map(|(idx, c)| if pred(c) { None } else { Some(idx) })
+        .unwrap_or_else(|| s.len());
 
     let digits = &s[..last_index];
     let rem = &s[last_index..];
 
     (rem, digits)
+}
+
+pub(crate) fn extract_digits (s: &str) -> (&str, &str) {
+    take_while(|c| c.is_ascii_digit(), s)
+}
+
+pub(crate) fn extract_whitespaces (s: &str) -> (&str, &str) {
+    take_while(|c| c.is_whitespace(), s)
 }
 
 pub(crate) fn extract_op (s: &str) -> (&str, &str) {
