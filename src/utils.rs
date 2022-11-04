@@ -10,15 +10,33 @@ fn take_while(pred: impl Fn(char) -> bool, s: &str) -> (&str, &str) {
     (rem, digits)
 }
 
-pub(crate) fn extract_digits(s: &str) -> (&str, &str) {
-    take_while(|c| c.is_ascii_digit(), s)
+fn take_while_1(
+    pred: impl Fn(char) -> bool,
+    s: &str,
+    err_msg: String,
+) -> Result<(&str, &str), String> {
+    let (rem, extracted) = take_while(pred, s);
+
+    if extracted.is_empty() {
+        Err(err_msg)
+    } else {
+        Ok((rem, extracted))
+    }
+}
+
+pub(crate) fn extract_digits(s: &str) -> Result<(&str, &str), String> {
+    take_while_1(
+        |c| c.is_ascii_digit(),
+        s,
+        format!("Expected digits: `{}`", s),
+    )
 }
 
 pub(crate) fn extract_whitespaces(s: &str) -> (&str, &str) {
     take_while(|c| c.is_whitespace(), s)
 }
 
-pub(crate) fn extract_id(s: &str) -> (&str, &str) {
+pub(crate) fn extract_id(s: &str) -> Result<(&str, &str), String> {
     let input_starts_with_alphabetic = s
         .chars()
         .next()
@@ -26,17 +44,17 @@ pub(crate) fn extract_id(s: &str) -> (&str, &str) {
         .unwrap_or(false);
 
     if input_starts_with_alphabetic {
-        take_while(|c| c.is_alphanumeric() || c == '_', s)
+        Ok(take_while(|c| c.is_alphanumeric() || c == '_', s))
     } else {
-        (s, "")
+        Err(format!("Identifier expected: `{}`", s))
     }
 }
 
-pub(crate) fn tag<'a, 'b>(starting_text: &'a str, s: &'b str) -> &'b str {
+pub(crate) fn tag<'a, 'b>(starting_text: &'a str, s: &'b str) -> Result<&'b str, String> {
     if s.starts_with(starting_text) {
-        &s[starting_text.len()..]
+        Ok(&s[starting_text.len()..])
     } else {
-        panic!("expected `{}`", starting_text)
+        Err(format!("expected `{}`", starting_text))
     }
 }
 
@@ -55,22 +73,26 @@ mod tests {
 
     #[test]
     fn extract_one_digit() {
-        assert_eq!(extract_digits("1+2"), ("+2", "1"));
+        assert_eq!(extract_digits("1+2"), Ok(("+2", "1")));
     }
 
     #[test]
     fn extract_multiple_digits() {
-        assert_eq!(extract_digits("10-20"), ("-20", "10"));
+        assert_eq!(extract_digits("10-20"), Ok(("-20", "10")));
     }
 
     #[test]
-    fn do_not_extract_anything_from_empty_input() {
-        assert_eq!(extract_digits(""), ("", ""));
+    fn do_not_extract_anything_when_input_is_invalid() {
+        assert_eq!(extract_digits(""), Err(String::from("Expected digits: ``")));
+        assert_eq!(
+            extract_digits("abc"),
+            Err(String::from("Expected digits: `abc`"))
+        );
     }
 
     #[test]
     fn extract_digits_with_no_remainder() {
-        assert_eq!(extract_digits("100"), ("", "100"));
+        assert_eq!(extract_digits("100"), Ok(("", "100")));
     }
 
     #[test]
@@ -83,24 +105,33 @@ mod tests {
 
     #[test]
     fn extract_alphanumeric_unicode_identifiers_but_not_emojis() {
-        assert_eq!(extract_id("id   stop"), ("   stop", "id"));
-        assert_eq!(extract_id("id123()"), ("()", "id123"));
-        assert_eq!(extract_id("id_one(50)"), ("(50)", "id_one"));
-        assert_eq!(extract_id("idOne = 23"), (" = 23", "idOne"));
-        assert_eq!(extract_id("id_愛; 1+1"), ("; 1+1", "id_愛"));
-        assert_eq!(extract_id("só💣   stop"), ("💣   stop", "só"));
+        assert_eq!(extract_id("id   stop"), Ok(("   stop", "id")));
+        assert_eq!(extract_id("id123()"), Ok(("()", "id123")));
+        assert_eq!(extract_id("id_one(50)"), Ok(("(50)", "id_one")));
+        assert_eq!(extract_id("idOne = 23"), Ok((" = 23", "idOne")));
+        assert_eq!(extract_id("id_愛; 1+1"), Ok(("; 1+1", "id_愛")));
+        assert_eq!(extract_id("só💣   stop"), Ok(("💣   stop", "só")));
     }
 
     #[test]
-    fn do_not_extract_ids_starting_with_numbers() {
-        assert_eq!(extract_id("1abc = 25"), ("1abc = 25", ""));
-        assert_eq!(extract_id("123abc = 10"), ("123abc = 10", ""));
-        assert_eq!(extract_id("123abc(var)"), ("123abc(var)", ""));
+    fn fail_to_extract_ids_starting_with_numbers() {
+        assert_eq!(
+            extract_id("1abc = 25"),
+            Err("Identifier expected: `1abc = 25`".to_string())
+        );
+        assert_eq!(
+            extract_id("123abc = 10"),
+            Err("Identifier expected: `123abc = 10`".to_string())
+        );
+        assert_eq!(
+            extract_id("123abc(var)"),
+            Err("Identifier expected: `123abc(var)`".to_string())
+        );
     }
 
     #[test]
     fn tag_word() {
-        assert_eq!(tag("let", "let a"), " a");
-        assert_eq!(tag("=", "= 10"), " 10");
+        assert_eq!(tag("let", "let a"), Ok(" a"));
+        assert_eq!(tag("=", "= 10"), Ok(" 10"));
     }
 }

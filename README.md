@@ -1,5 +1,9 @@
 # Rust
 
+## Vars & Allocation
+
+1. `str` is a fixed-length string store _somewhere in the memory_. `String` on the other hand is a growable, heap-allocated string.
+
 ## Attributes
 
 1. Are actually defined by ECMA (?) and represent a unified way of creating metadata. (Reference)[https://doc.rust-lang.org/reference/attributes.html].
