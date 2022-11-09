@@ -36,6 +36,10 @@ pub(crate) fn extract_whitespaces(s: &str) -> (&str, &str) {
     take_while(|c| c.is_whitespace(), s)
 }
 
+pub(crate) fn extract_whitespaces_1(s: &str) -> Result<(&str, &str), String> {
+    take_while_1(|c| c.is_whitespace(), s, "Expected space".to_string())
+}
+
 pub(crate) fn extract_id(s: &str) -> Result<(&str, &str), String> {
     let input_starts_with_alphabetic = s
         .chars()
@@ -54,7 +58,7 @@ pub(crate) fn tag<'a, 'b>(starting_text: &'a str, s: &'b str) -> Result<&'b str,
     if s.starts_with(starting_text) {
         Ok(&s[starting_text.len()..])
     } else {
-        Err(format!("expected `{}`", starting_text))
+        Err(format!("Expected `{}` not found in `{}`", starting_text, s))
     }
 }
 
@@ -96,6 +100,23 @@ mod tests {
     }
 
     #[test]
+    fn extract_spaces_at_start_of_string() {
+        assert_eq!(extract_whitespaces_1("   234a"), Ok(("234a", "   ")));
+        assert_eq!(
+            extract_whitespaces_1("   \nabc123"),
+            Ok(("abc123", "   \n"))
+        );
+    }
+
+    #[test]
+    fn fails_to_extract_spaces_when_they_are_not_required() {
+        assert_eq!(
+            extract_whitespaces_1("blah"),
+            Err("Expected space".to_string())
+        )
+    }
+
+    #[test]
     fn extract_operations() {
         assert_eq!(extract_op("+12"), ("12", "+"));
         assert_eq!(extract_op("-45"), ("45", "-"));
@@ -133,5 +154,13 @@ mod tests {
     fn tag_word() {
         assert_eq!(tag("let", "let a"), Ok(" a"));
         assert_eq!(tag("=", "= 10"), Ok(" 10"));
+    }
+
+    #[test]
+    fn fails_to_tag_word_if_string_does_not_start_with_given_substr() {
+        assert_eq!(
+            tag("let", "cat a"),
+            Err("Expected `let` not found in `cat a`".to_string())
+        )
     }
 }

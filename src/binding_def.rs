@@ -11,7 +11,7 @@ pub struct BindingDef {
 impl BindingDef {
     pub fn new(s: &str) -> Result<(&str, Self), String> {
         let s = utils::tag("let", s)?;
-        let (s, _) = utils::extract_whitespaces(s);
+        let (s, _) = utils::extract_whitespaces_1(s)?;
 
         let (s, name) = utils::extract_id(s)?;
         let (s, _) = utils::extract_whitespaces(s);
@@ -73,6 +73,14 @@ mod tests {
                     }
                 }
             ))
+        )
+    }
+
+    #[test]
+    fn fails_to_parse_binding_def_without_space_after_keyword() {
+        assert_eq!(
+            BindingDef::new("letmy_var=1+2"),
+            Err("Expected space".to_string())
         )
     }
 }
