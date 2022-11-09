@@ -1,6 +1,6 @@
 pub mod binding_def;
-pub mod binding_usage;
 mod env;
 pub mod expr;
+pub mod statement;
 mod utils;
 pub mod val;
