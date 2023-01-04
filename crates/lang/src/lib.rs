@@ -5,18 +5,19 @@ mod statement;
 mod utils;
 mod val;
 
-use env::Env;
-use val::Val;
+pub use env::Env;
+pub use val::Val;
 
-struct Parse(statement::Statement);
+#[derive(Debug)]
+pub struct Parse(statement::Statement);
 
 impl Parse {
-    fn eval(&self, env: &mut Env) -> Result<Val, String> {
+    pub fn eval(&self, env: &mut Env) -> Result<Val, String> {
         self.0.eval(env)
     }
 }
 
-fn parse(s: &str) -> Result<Parse, String> {
+pub fn parse(s: &str) -> Result<Parse, String> {
     let (s, stmt) = statement::Statement::new(s)?;
 
     if s.is_empty() {
