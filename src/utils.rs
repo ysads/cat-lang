@@ -62,7 +62,7 @@ pub(crate) fn tag<'a, 'b>(starting_text: &'a str, s: &'b str) -> Result<&'b str,
     }
 }
 
-pub(crate) fn extract_op(s: &str) -> (&str, &str) {
+fn extract_op(s: &str) -> (&str, &str) {
     match &s[0..1] {
         "+" | "-" | "*" | "/" => {}
         _ => panic!("bad operator"),

@@ -4,13 +4,13 @@ use crate::expr::Expr;
 use crate::val::Val;
 
 #[derive(Debug, PartialEq)]
-pub enum Statement {
+pub(crate) enum Statement {
     Expr(Expr),
     BindingDef(BindingDef),
 }
 
 impl Statement {
-    pub fn new(s: &str) -> Result<(&str, Self), String> {
+    pub(crate) fn new(s: &str) -> Result<(&str, Self), String> {
         BindingDef::new(s)
             .map(|(s, binding_def)| (s, Self::BindingDef(binding_def)))
             .or_else(|_| Expr::new(s).map(|(s, expr)| (s, Self::Expr(expr))))
