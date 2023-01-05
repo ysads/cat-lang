@@ -4,10 +4,11 @@ mod block;
 use crate::env::Env;
 use crate::utils;
 use crate::val::Val;
-use binding_usage::BindingUsage;
-use block::Block;
 
-#[derive(Debug, PartialEq)]
+pub(crate) use binding_usage::BindingUsage;
+pub(crate) use block::Block;
+
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Number(pub(crate) i32);
 
 impl Number {
@@ -18,7 +19,7 @@ impl Number {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Op {
     Add,
     Sub,
@@ -36,7 +37,7 @@ impl Op {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Expr {
     Number(Number),
     Operation {

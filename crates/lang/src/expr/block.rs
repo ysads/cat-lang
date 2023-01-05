@@ -3,7 +3,7 @@ use crate::statement::Statement;
 use crate::utils;
 use crate::val::Val;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Block {
     pub(crate) statements: Vec<Statement>,
 }
@@ -13,16 +13,7 @@ impl Block {
         let s = utils::tag("{", s)?;
         let (s, _) = utils::extract_whitespaces(s);
 
-        let mut s = s;
-        let mut statements = Vec::new();
-
-        while let Ok((new_s, stmt)) = Statement::new(s) {
-            s = new_s;
-            statements.push(stmt);
-
-            let (new_s, _) = utils::extract_whitespaces(s);
-            s = new_s;
-        }
+        let (s, statements) = utils::sequence(Statement::new, s)?;
 
         let (s, _) = utils::extract_whitespaces(s);
         let s = utils::tag("}", s)?;

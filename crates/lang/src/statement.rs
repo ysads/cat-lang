@@ -1,11 +1,13 @@
 use crate::binding_def::BindingDef;
 use crate::env::Env;
 use crate::expr::Expr;
+use crate::func_def::{self, FuncDef};
 use crate::val::Val;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Statement {
     Expr(Expr),
+    FuncDef(FuncDef),
     BindingDef(BindingDef),
 }
 
@@ -13,6 +15,7 @@ impl Statement {
     pub(crate) fn new(s: &str) -> Result<(&str, Self), String> {
         BindingDef::new(s)
             .map(|(s, binding_def)| (s, Self::BindingDef(binding_def)))
+            .or_else(|_| FuncDef::new(s).map(|(s, func_def)| (s, Self::FuncDef(func_def))))
             .or_else(|_| Expr::new(s).map(|(s, expr)| (s, Self::Expr(expr))))
     }
 
@@ -20,6 +23,10 @@ impl Statement {
         match self {
             Self::BindingDef(binding_def) => {
                 binding_def.eval(env)?;
+                Ok(Val::Unit)
+            }
+            Self::FuncDef(func_def) => {
+                func_def.eval(env)?;
                 Ok(Val::Unit)
             }
             Self::Expr(expr) => expr.eval(env),
@@ -30,7 +37,7 @@ impl Statement {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::expr::{Number, Op};
+    use crate::expr::{BindingUsage, Number, Op};
 
     #[test]
     fn parse_binding_def() {
@@ -56,6 +63,23 @@ mod tests {
                     lhs: Box::new(Expr::Number(Number(1))),
                     rhs: Box::new(Expr::Number(Number(1))),
                     op: Op::Add
+                })
+            ))
+        )
+    }
+
+    #[test]
+    fn parse_func_def() {
+        assert_eq!(
+            Statement::new("fn identity x => x"),
+            Ok((
+                "",
+                Statement::FuncDef(FuncDef {
+                    name: "identity".to_string(),
+                    params: vec!["x".to_string()],
+                    body: Box::new(Statement::Expr(Expr::BindingUsage(BindingUsage {
+                        name: "x".to_string(),
+                    })))
                 })
             ))
         )

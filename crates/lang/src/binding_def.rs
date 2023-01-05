@@ -2,7 +2,7 @@ use crate::env::Env;
 use crate::expr::Expr;
 use crate::utils;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct BindingDef {
     pub(crate) name: String,
     pub(crate) val: Expr,
