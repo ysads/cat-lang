@@ -194,8 +194,8 @@ mod tests {
                 statements: vec![
                     Statement::Expr(Expr::Number(Number(100))),
                     Statement::Expr(Expr::Operation {
-                        lhs: Number(3),
-                        rhs: Number(7),
+                        lhs: Box::new(Expr::Number(Number(3))),
+                        rhs: Box::new(Expr::Number(Number(7))),
                         op: Op::Mul
                     })
                 ]

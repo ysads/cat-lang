@@ -50,8 +50,8 @@ mod tests {
                 BindingDef {
                     name: "a".to_string(),
                     val: Expr::Operation {
-                        lhs: Number(10),
-                        rhs: Number(2),
+                        lhs: Box::new(Expr::Number(Number(10))),
+                        rhs: Box::new(Expr::Number(Number(2))),
                         op: Op::Div
                     }
                 }
@@ -68,8 +68,8 @@ mod tests {
                 BindingDef {
                     name: "id_愛".to_string(),
                     val: Expr::Operation {
-                        lhs: Number(3),
-                        rhs: Number(5),
+                        lhs: Box::new(Expr::Number(Number(3))),
+                        rhs: Box::new(Expr::Number(Number(5))),
                         op: Op::Mul
                     }
                 }
