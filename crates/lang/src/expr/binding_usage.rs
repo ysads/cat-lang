@@ -1,4 +1,5 @@
 use crate::env::Env;
+use crate::func_call::FuncCall;
 use crate::utils;
 use crate::val::Val;
 
@@ -20,12 +21,27 @@ impl BindingUsage {
     }
 
     pub(super) fn eval(&self, env: &Env) -> Result<Val, String> {
-        env.get_binding(&self.name)
+        env.get_binding(&self.name).or_else(|err_msg| {
+            if env.get_func(&self.name).is_ok() {
+                FuncCall {
+                    callee: self.name.clone(),
+                    params: vec![],
+                }
+                .eval(env)
+            } else {
+                Err(err_msg)
+            }
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::{
+        expr::{Expr, Number},
+        statement::Statement,
+    };
+
     use super::*;
 
     #[test]
@@ -52,6 +68,24 @@ mod tests {
             }
             .eval(&env),
             Ok(Val::Number(10))
+        )
+    }
+
+    #[test]
+    fn eval_func_call_with_no_params() {
+        let mut env = Env::default();
+        env.add_func(
+            "fn_no_param".to_string(),
+            vec![],
+            Statement::Expr(Expr::Number(Number(2))),
+        );
+
+        assert_eq!(
+            BindingUsage {
+                name: "fn_no_param".to_string()
+            }
+            .eval(&env),
+            Ok(Val::Number(2))
         )
     }
 

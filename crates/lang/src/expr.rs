@@ -2,6 +2,7 @@ mod binding_usage;
 mod block;
 
 use crate::env::Env;
+use crate::func_call::{self, FuncCall};
 use crate::utils;
 use crate::val::Val;
 
@@ -49,6 +50,7 @@ pub(crate) enum Expr {
     },
     BindingUsage(BindingUsage),
     Block(Block),
+    FuncCall(FuncCall),
 }
 
 impl Expr {
@@ -58,6 +60,7 @@ impl Expr {
 
     fn new_non_operation(s: &str) -> Result<(&str, Self), String> {
         Self::new_number(s)
+            .or_else(|_| Self::new_func_call(s))
             .or_else(|_| Self::new_binding_usage(s))
             .or_else(|_| Self::new_block(s))
     }
@@ -83,6 +86,10 @@ impl Expr {
 
     fn new_number(s: &str) -> Result<(&str, Self), String> {
         Number::new(s).map(|(s, number)| (s, Self::Number(number)))
+    }
+
+    fn new_func_call(s: &str) -> Result<(&str, Self), String> {
+        FuncCall::new(s).map(|(s, func_call)| (s, Self::FuncCall(func_call)))
     }
 
     fn new_binding_usage(s: &str) -> Result<(&str, Self), String> {
@@ -115,6 +122,7 @@ impl Expr {
 
                 Ok(result)
             }
+            Self::FuncCall(func_call) => func_call.eval(env),
             Self::BindingUsage(binding_usage) => binding_usage.eval(env),
             Self::Block(block) => block.eval(env),
         }
@@ -213,6 +221,20 @@ mod tests {
                     })),
                     op: Op::Mul,
                 },
+            )),
+        );
+    }
+
+    #[test]
+    fn parse_func_call() {
+        assert_eq!(
+            Expr::new("add 1 2"),
+            Ok((
+                "",
+                Expr::FuncCall(FuncCall {
+                    callee: "add".to_string(),
+                    params: vec![Expr::Number(Number(1)), Expr::Number(Number(2))],
+                }),
             )),
         );
     }
@@ -362,6 +384,104 @@ mod tests {
             })
             .eval(&Env::default()),
             Ok(Val::Number(10))
+        )
+    }
+
+    #[test]
+    fn eval_func_call() {
+        let mut env = Env::default();
+
+        env.add_func(
+            "add".to_string(),
+            vec!["x".to_string(), "y".to_string()],
+            Statement::Expr(Expr::Operation {
+                lhs: Box::new(Expr::BindingUsage(BindingUsage {
+                    name: "x".to_string(),
+                })),
+                rhs: Box::new(Expr::BindingUsage(BindingUsage {
+                    name: "y".to_string(),
+                })),
+                op: Op::Add,
+            }),
+        );
+
+        assert_eq!(
+            Expr::FuncCall(FuncCall {
+                callee: "add".to_string(),
+                params: vec![Expr::Number(Number(2)), Expr::Number(Number(2))]
+            })
+            .eval(&env),
+            Ok(Val::Number(4))
+        )
+    }
+
+    #[test]
+    fn eval_non_existent_func_call() {
+        let env = Env::default();
+
+        assert_eq!(
+            Expr::FuncCall(FuncCall {
+                callee: "i_dont_exist".to_string(),
+                params: vec![]
+            })
+            .eval(&env),
+            Err("Function with name `i_dont_exist` not found".to_string())
+        )
+    }
+
+    #[test]
+    fn eval_too_few_args_func_call() {
+        let mut env = Env::default();
+
+        env.add_func(
+            "add".to_string(),
+            vec!["x".to_string(), "y".to_string()],
+            Statement::Expr(Expr::Operation {
+                lhs: Box::new(Expr::BindingUsage(BindingUsage {
+                    name: "x".to_string(),
+                })),
+                rhs: Box::new(Expr::BindingUsage(BindingUsage {
+                    name: "y".to_string(),
+                })),
+                op: Op::Add,
+            }),
+        );
+
+        assert_eq!(
+            Expr::FuncCall(FuncCall {
+                callee: "add".to_string(),
+                params: vec![Expr::Number(Number(10))]
+            })
+            .eval(&env),
+            Err("Function `add` expected 2 args but received 1".to_string())
+        )
+    }
+
+    #[test]
+    fn eval_too_many_args_func_call() {
+        let mut env = Env::default();
+
+        env.add_func(
+            "square".to_string(),
+            vec!["x".to_string()],
+            Statement::Expr(Expr::Operation {
+                lhs: Box::new(Expr::BindingUsage(BindingUsage {
+                    name: "x".to_string(),
+                })),
+                rhs: Box::new(Expr::BindingUsage(BindingUsage {
+                    name: "x".to_string(),
+                })),
+                op: Op::Mul,
+            }),
+        );
+
+        assert_eq!(
+            Expr::FuncCall(FuncCall {
+                callee: "square".to_string(),
+                params: vec![Expr::Number(Number(10)), Expr::Number(Number(10))]
+            })
+            .eval(&env),
+            Err("Function `square` expected 1 args but received 2".to_string())
         )
     }
 
