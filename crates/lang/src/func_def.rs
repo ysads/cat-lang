@@ -1,4 +1,8 @@
-use crate::{statement::Statement, utils, Env};
+use crate::{
+    statement::Statement,
+    utils::{self, extract_whitespaces},
+    Env,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct FuncDef {
@@ -17,6 +21,7 @@ impl FuncDef {
 
         let (s, params) = utils::sequence(
             |s| utils::extract_id(s).map(|(s, id)| (s, id.to_string())),
+            extract_whitespaces,
             s,
         )?;
 
