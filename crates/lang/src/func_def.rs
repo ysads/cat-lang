@@ -35,7 +35,7 @@ impl FuncDef {
         ))
     }
 
-    pub(crate) fn eval(&self, env: &mut Env) -> Result<(), String> {
+    pub(crate) fn eval(&self, _env: &mut Env) -> Result<(), String> {
         Ok(())
     }
 }

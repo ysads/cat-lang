@@ -25,6 +25,7 @@ pub(crate) enum Op {
     Sub,
     Mul,
     Div,
+    DivisibleBy,
 }
 
 impl Op {
@@ -34,6 +35,7 @@ impl Op {
             .or_else(|_| utils::tag("-", s).map(|s| (s, Self::Sub)))
             .or_else(|_| utils::tag("*", s).map(|s| (s, Self::Mul)))
             .or_else(|_| utils::tag("/", s).map(|s| (s, Self::Div)))
+            .or_else(|_| utils::tag("|", s).map(|s| (s, Self::DivisibleBy)))
     }
 }
 
@@ -104,13 +106,14 @@ impl Expr {
                 };
 
                 let result = match op {
-                    Op::Add => lhs + rhs,
-                    Op::Sub => lhs - rhs,
-                    Op::Div => lhs / rhs,
-                    Op::Mul => lhs * rhs,
+                    Op::Add => Val::Number(lhs + rhs),
+                    Op::Sub => Val::Number(lhs - rhs),
+                    Op::Div => Val::Number(lhs / rhs),
+                    Op::Mul => Val::Number(lhs * rhs),
+                    Op::DivisibleBy => Val::Bool(lhs % rhs == 0),
                 };
 
-                Ok(Val::Number(result))
+                Ok(result)
             }
             Self::BindingUsage(binding_usage) => binding_usage.eval(env),
             Self::Block(block) => block.eval(env),
@@ -155,6 +158,12 @@ mod tests {
     }
 
     #[test]
+    fn parse_divisible_by() {
+        assert_eq!(Op::new("|"), Ok(("", Op::DivisibleBy)));
+        assert_eq!(Op::new("|2"), Ok(("2", Op::DivisibleBy)));
+    }
+
+    #[test]
     fn parse_number_as_expr() {
         assert_eq!(Expr::new("456"), Ok(("", Expr::Number(Number(456)))))
     }
@@ -169,6 +178,21 @@ mod tests {
                     lhs: Box::new(Expr::Number(Number(1))),
                     rhs: Box::new(Expr::Number(Number(2))),
                     op: Op::Add
+                }
+            ))
+        )
+    }
+
+    #[test]
+    fn parse_10_div_by_2() {
+        assert_eq!(
+            Expr::new("10 | 2"),
+            Ok((
+                "",
+                Expr::Operation {
+                    lhs: Box::new(Expr::Number(Number(10))),
+                    rhs: Box::new(Expr::Number(Number(2))),
+                    op: Op::DivisibleBy
                 }
             ))
         )
@@ -292,6 +316,28 @@ mod tests {
             .eval(&Env::default()),
             Ok(Val::Number(20))
         );
+    }
+
+    #[test]
+    fn eval_divisible_by() {
+        assert_eq!(
+            Expr::Operation {
+                lhs: Box::new(Expr::Number(Number(10))),
+                rhs: Box::new(Expr::Number(Number(2))),
+                op: Op::DivisibleBy
+            }
+            .eval(&Env::default()),
+            Ok(Val::Bool(true))
+        );
+        assert_eq!(
+            Expr::Operation {
+                lhs: Box::new(Expr::Number(Number(10))),
+                rhs: Box::new(Expr::Number(Number(3))),
+                op: Op::DivisibleBy
+            }
+            .eval(&Env::default()),
+            Ok(Val::Bool(false))
+        )
     }
 
     #[test]
